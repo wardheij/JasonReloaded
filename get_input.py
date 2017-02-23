@@ -14,6 +14,7 @@ def import_data(file_name):
 	    variables = list(map(int, f.readline().split(' ')))
 
 	    video_sizes = list(map(int, f.readline().split(' ')))
+	    print len(video_sizes)
 
 	    no_videos = variables[0]
 	    no_endpoints = variables[1]
@@ -60,7 +61,7 @@ def import_data(file_name):
 	        video_id, endpoint, no_requests = video_line
 	        endpoints[endpoint]["videos"][video_id] = no_requests
 
-	return no_endpoints, no_caches, no_videos, video_sizes, capacity, endpoints
+	return no_endpoints, no_videos, no_caches, video_sizes, capacity, endpoints
 
 class Cache(object):
 	def __init__(self, size):
@@ -85,7 +86,6 @@ def fill_score(score, endpoints, video_sizes):
 		for v, video in enumerate(endpoint["videos"]):
 			for c, cache in enumerate(endpoint["cache"]):
 				score[e, v, c] = get_score(video, video_sizes[v], cache, endpoint["data"])
-				print get_score(video, video_sizes[v], cache, endpoint["data"])
 
 def get_score(requests, video_size, cache, data_latency):
 	if requests == 0 or cache == 0:
@@ -95,7 +95,7 @@ def get_score(requests, video_size, cache, data_latency):
 
 	return (requests * latency_improvement) / video_size
 
-def try_best_greedy(score, video_sizes):
+def try_best_greedy(score, video_sizes, cache_list, endpoints, C):
 	flat_score = score.flatten()
 
 	print score
@@ -103,14 +103,13 @@ def try_best_greedy(score, video_sizes):
 	i = 0
 	while i < 10:
 		i += 1
-		print "hier"
 		index = np.argmax(flat_score)
 
 		# endpoint video cache
 		e, v, c = np.unravel_index(index, score.shape)
 
 		if cache_list[c].add_video(video_sizes, v):
-			update_score(v, c)
+			update_score(v, c, cache_list, endpoints, score, C)
 
 			highest_score = flat_score[index]
 			return highest_score
@@ -118,17 +117,16 @@ def try_best_greedy(score, video_sizes):
 		flat_score[index] = 0
 		score[e, v, c] = 0
 
-def update_score(v, cache):
-	for endpoint in cache_list[cache]:
-		if endpoint["videos"][v]:
-			e = endpoint["index"]
+def update_score(v, cache, cache_list, endpoints, score, C):
+	for e in cache_list[cache].endpoint_list:
+		if endpoints[e]["videos"][v]:
 			improvement = score[e, v, cache] 
 
 			for c in range(C):
 				if score[e, v, c]:
 					score[e, v, c] -= improvement
 
-def output_result():
+def output_result(cache_list):
 	out = open("output.txt", "w")
 
 	counter = 0
@@ -139,11 +137,13 @@ def output_result():
 	out.write(str(counter) + "\n")
 
 	for c, cache in enumerate(cache_list):
-		out.write(str(c) + " ")
-		
-		out.write(cache.video_list.join(" "))
+		if cache.video_list:
+			out.write(str(c) + " ")
+			
+			for vid in cache.video_list:
+				out.write(str(vid) + " ")
 
-		out.write("\n")
+			out.write("\n")
 
 	out.close()
 
@@ -157,14 +157,19 @@ def do_simple_greedy():
 	for _ in range(C):
 		cache_list.append(Cache(capacity))
 
+	for index, e in enumerate(endpoints):
+		for c, caches in enumerate(e["cache"]):
+			if caches:
+				cache_list[c].add_endpoint(index)
+
 	# Prepare score-space
 	fill_score(score, endpoints, video_sizes)
 
 	# Perform algorithm
-	try_best_greedy(score, video_sizes)
+	try_best_greedy(score, video_sizes, cache_list, endpoints, C)
 
 
-	output_result()
+	output_result(cache_list)
 
 
 do_simple_greedy()
