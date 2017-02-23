@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 def import_data(file_name):
 	# input data: based on line 1 read following lines
@@ -98,7 +99,7 @@ def try_best_greedy(score, video_sizes, cache_list, endpoints, C):
 	flat_score = score.flatten()
 
 	i = 0
-	while i < 100:
+	while i < 10:
 		i += 1
 		index = np.argmax(flat_score)
 
@@ -147,7 +148,7 @@ def output_result(cache_list):
 def do_simple_greedy():
 	cache_list = []
 
-	E, V, C, video_sizes, capacity, endpoints = import_data("me_at_the_zoo.in")
+	E, V, C, video_sizes, capacity, endpoints = import_data("trending_today.in")
 
 	score = np.zeros((E, V, C))
 
@@ -163,9 +164,14 @@ def do_simple_greedy():
 	fill_score(score, endpoints, video_sizes)
 
 	# Perform algorithm
-	for _ in range(100):
+	for _ in range(10):
 		try_best_greedy(score, video_sizes, cache_list, endpoints, C)
 
+	for _ in range(100000):
+		rand1 = random.randint(0, C)
+		rand2 = random.randint(0, V)
+
+		cache_list[rand1].add_video(rand2)
 
 	output_result(cache_list)
 
