@@ -1,6 +1,71 @@
 import numpy as np
 
-score = np.zeros((E, V, C))
+endpoints = []
+video_sizes = []
+score = np.array([])
+E = 0
+V = 0
+C = 0
+
+def import_data(file_name):
+	# input data: based on line 1 read following lines
+
+	no_videos = 0
+	no_endpoints = 0
+	no_caches = 0
+
+	with open(file_name) as f:
+
+	    # number-of videos, endpoints, descriptions, servers, capacity
+	    variables = list(map(int, f.readline().split(' ')))
+
+	    video_sizes = list(map(int, f.readline().split(' ')))
+
+	    no_videos = variables[0]
+	    no_endpoints = variables[1]
+	    no_caches = variables[3]
+
+	    endpoints = [{} for _ in range(no_endpoints)]
+
+	    # loop over all endpoints and get their caches latencies
+	    for i in range(no_endpoints):
+
+	        # grab line
+	        line = list(map(int, f.readline().split(' ')))
+
+	        # endpoint latency
+	        latency = line[0]
+
+	        endpoints[i]["data"] = latency
+
+	        # number of caches
+	        no_caches_end = line[1]
+
+	        cache_latencies = np.zeros(no_caches)
+
+	        # append empty array for requests per video
+	        endpoints[i]["videos"] = np.zeros(no_videos)
+
+	        # find all caches
+	        for _ in range(no_caches_end):
+	            cache = f.readline()
+	            cache = cache.split(' ')
+
+	            # append as a dict for cache no : cache latency
+	            cache_latencies[int(cache[0])] = int(cache[1])
+
+	        # append cache latencies
+	        endpoints[i]["cache"] = cache_latencies
+
+	    # after we've seen all endpoints
+	    for i in range(no_videos):
+	        video_line = f.readline()
+	        video_line = video_line.split(' ')
+	        video_line = map(int, video_line)
+	        video_id, endpoint, no_requests = video_line
+	        endpoints[endpoint]["videos"][video_id] = no_requests
+
+	return no_endpoints, no_caches, no_videos
 
 class Cache(object):
 	def __init__(self, size):
@@ -10,9 +75,9 @@ class Cache(object):
 		self.endpoint_list = []
 
 	def add_video(self, v):
-		if self.content + video[v] <= self.size:
+		if self.content + video_sizes[v] <= self.size:
 			self.video_list.append(v)
-			self.content += video[v]
+			self.content += video_sizes[v]
 			return 1
 		return 0
 
@@ -21,23 +86,25 @@ class Cache(object):
 		
 		
 def fill_score():
+	print score
+
 	for e, endpoint in enumerate(endpoints):
 		for v, video in enumerate(endpoint["videos"]):
-			for c, cache enumerate(endpoint["cache"]):
-				score[e, v, c] = get_score(video, cache, endpoint["data"])
+			for c, cache in enumerate(endpoint["cache"]):
+				score[e, v, c] = get_score(video, video_sizes[v], cache, endpoint["data"])
 
-def get_score(video, cache, data_latency):
-	if video == 0 or cache == 0:
+def get_score(requests, video_size, cache, data_latency):
+	if requests == 0 or cache == 0:
 		return 0
-
-	requests, video_size = video
 
 	latency_improvement = data_latency - cache
 
 	return (requests * latency_improvement) / video_size
 
 def try_best_greedy():
+
 	flat_score = score.flatten()
+	print score
 	
 	while True:
 		index = np.argmax(flat_score)
@@ -85,13 +152,17 @@ def output_result():
 
 def do_simple_greedy():
 
+	E, V, C = import_data("me_at_the_zoo.in")
 
+	score = np.zeros((E, V, C))
+
+
+	# Prepare score-space
 	fill_score()
 
+	# Perform algorithm
+	try_best_greedy()
 
-	while try_best_greedy():
-
-		pass
 
 	output_result()
 
