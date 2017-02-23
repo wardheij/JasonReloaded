@@ -1,20 +1,12 @@
 import numpy as np
 
-endpoints = []
-video_sizes = []
-cache_list = []
-score = np.array([])
-capacity = 0
-E = 0
-V = 0
-C = 0
-
 def import_data(file_name):
 	# input data: based on line 1 read following lines
 
 	no_videos = 0
 	no_endpoints = 0
 	no_caches = 0
+	endpoints = []
 
 	with open(file_name) as f:
 
@@ -68,7 +60,7 @@ def import_data(file_name):
 	        video_id, endpoint, no_requests = video_line
 	        endpoints[endpoint]["videos"][video_id] = no_requests
 
-	return no_endpoints, no_caches, no_videos, video_sizes
+	return no_endpoints, no_caches, no_videos, video_sizes, capacity, endpoints
 
 class Cache(object):
 	def __init__(self, size):
@@ -88,7 +80,7 @@ class Cache(object):
 		self.endpoint_list.append(endpoint)
 		
 		
-def fill_score(score):
+def fill_score(score, endpoints, video_sizes):
 	for e, endpoint in enumerate(endpoints):
 		for v, video in enumerate(endpoint["videos"]):
 			for c, cache in enumerate(endpoint["cache"]):
@@ -106,7 +98,11 @@ def get_score(requests, video_size, cache, data_latency):
 def try_best_greedy(score, video_sizes):
 	flat_score = score.flatten()
 
-	# while True:
+	print score
+
+	i = 0
+	while i < 10:
+		i += 1
 		print "hier"
 		index = np.argmax(flat_score)
 
@@ -152,8 +148,9 @@ def output_result():
 	out.close()
 
 def do_simple_greedy():
+	cache_list = []
 
-	E, V, C, video_sizes = import_data("me_at_the_zoo.in")
+	E, V, C, video_sizes, capacity, endpoints = import_data("me_at_the_zoo.in")
 
 	score = np.zeros((E, V, C))
 
@@ -161,7 +158,7 @@ def do_simple_greedy():
 		cache_list.append(Cache(capacity))
 
 	# Prepare score-space
-	fill_score(score)
+	fill_score(score, endpoints, video_sizes)
 
 	# Perform algorithm
 	try_best_greedy(score, video_sizes)
