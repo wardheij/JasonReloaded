@@ -14,7 +14,6 @@ def import_data(file_name):
 	    variables = list(map(int, f.readline().split(' ')))
 
 	    video_sizes = list(map(int, f.readline().split(' ')))
-	    print len(video_sizes)
 
 	    no_videos = variables[0]
 	    no_endpoints = variables[1]
@@ -98,10 +97,8 @@ def get_score(requests, video_size, cache, data_latency):
 def try_best_greedy(score, video_sizes, cache_list, endpoints, C):
 	flat_score = score.flatten()
 
-	print score
-
 	i = 0
-	while i < 10:
+	while i < 1000:
 		i += 1
 		index = np.argmax(flat_score)
 
@@ -166,7 +163,8 @@ def do_simple_greedy():
 	fill_score(score, endpoints, video_sizes)
 
 	# Perform algorithm
-	try_best_greedy(score, video_sizes, cache_list, endpoints, C)
+	for _ in range(100):
+		try_best_greedy(score, video_sizes, cache_list, endpoints, C)
 
 
 	output_result(cache_list)
