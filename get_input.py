@@ -98,7 +98,7 @@ def try_best_greedy(score, video_sizes, cache_list, endpoints, C):
 	flat_score = score.flatten()
 
 	i = 0
-	while i < 1000:
+	while i < 100:
 		i += 1
 		index = np.argmax(flat_score)
 
